@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Aesthetic Smart To-Do</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+
+body{
+font-family: 'Segoe UI', sans-serif;
+background: linear-gradient(135deg,#89f7fe,#66a6ff);
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+.container{
+width:420px;
+backdrop-filter: blur(10px);
+background: rgba(255,255,255,0.2);
+border-radius:20px;
+padding:25px;
+box-shadow:0 10px 30px rgba(0,0,0,0.2);
+}
+
+h1{
+text-align:center;
+color:white;
+}
+
+input,select,button{
+width:100%;
+margin-top:10px;
+padding:10px;
+border:none;
+border-radius:10px;
+font-size:14px;
+}
+
+button{
+background:#4facfe;
+color:white;
+cursor:pointer;
+}
+
+button:hover{
+background:#0077ff;
+}
+
+.task{
+background:white;
+padding:12px;
+border-radius:10px;
+margin-top:10px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+.task small{
+display:block;
+color:gray;
+}
+
+.priority-high{
+border-left:6px solid red;
+}
+
+.priority-medium{
+border-left:6px solid orange;
+}
+
+.priority-low{
+border-left:6px solid green;
+}
+
+.actions button{
+margin-left:5px;
+padding:5px 8px;
+font-size:12px;
+}
+
+.popup{
+position:fixed;
+top:20px;
+right:20px;
+background:#ff4d4d;
+color:white;
+padding:15px;
+border-radius:10px;
+box-shadow:0 10px 25px rgba(0,0,0,0.2);
+display:none;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>✨ Smart To-Do</h1>
+
+<input id="taskInput" placeholder="Task title">
+
+<input type="datetime-local" id="taskTime">
+
+<select id="priority">
+<option value="low">Low Priority</option>
+<option value="medium">Medium Priority</option>
+<option value="high">High Priority</option>
+</select>
+
+<button onclick="addTask()">Add Task</button>
+
+<div id="taskList"></div>
+
+</div>
+
+<div id="popup" class="popup"></div>
+
+<script>
+
+let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+function saveTasks(){
+localStorage.setItem("tasks",JSON.stringify(tasks));
+}
+
+function addTask(){
+
+let title=document.getElementById("taskInput").value;
+let time=document.getElementById("taskTime").value;
+let priority=document.getElementById("priority").value;
+
+if(!title || !time){
+alert("Please enter task and time");
+return;
+}
+
+tasks.push({
+title,
+time,
+priority,
+done:false
+});
+
+saveTasks();
+renderTasks();
+
+document.getElementById("taskInput").value="";
+}
+
+function renderTasks(){
+
+let list=document.getElementById("taskList");
+list.innerHTML="";
+
+tasks.forEach((task,index)=>{
+
+let div=document.createElement("div");
+
+div.className="task priority-"+task.priority;
+
+div.innerHTML=`
+<div>
+<strong ${task.done?'style="text-decoration:line-through"':''}>${task.title}</strong>
+<small>${new Date(task.time).toLocaleString()}</small>
+</div>
+
+<div class="actions">
+<button onclick="completeTask(${index})">✔</button>
+<button onclick="deleteTask(${index})">🗑</button>
+</div>
+`;
+
+list.appendChild(div);
+
+});
+
+}
+
+function completeTask(i){
+tasks[i].done=true;
+saveTasks();
+renderTasks();
+}
+
+function deleteTask(i){
+tasks.splice(i,1);
+saveTasks();
+renderTasks();
+}
+
+function checkReminders(){
+
+let now=new Date().getTime();
+
+tasks.forEach(task=>{
+
+if(task.done) return;
+
+let taskTime=new Date(task.time).getTime();
+
+let diff=taskTime-now;
+
+if(diff<60000 && diff>0){
+
+showPopup(`⏰ Task Due Soon: ${task.title}`);
+
+if(task.priority==="high"){
+showPopup(`🚨 HIGH PRIORITY: ${task.title}`);
+}
+
+}
+
+});
+
+}
+
+function showPopup(text){
+
+let popup=document.getElementById("popup");
+
+popup.innerText=text;
+
+popup.style.display="block";
+
+setTimeout(()=>{
+popup.style.display="none";
+},4000);
+
+}
+
+setInterval(checkReminders,30000);
+
+renderTasks();
+
+</script>
+
+</body>
+</html>
